@@ -81,7 +81,7 @@ VOID print_results(int result, TCHAR* szMsg)
 }
 
 // note: templated version of this function is in Common.h
-VOID exec_check(int(*callback)(), const TCHAR* szMsg)
+BOOL exec_check(int(*callback)(), const TCHAR* szMsg)
 {
 	/* Print the text to screen so we can see what's currently running */
 	_print_check_text(szMsg);
@@ -92,6 +92,8 @@ VOID exec_check(int(*callback)(), const TCHAR* szMsg)
 	/* Print / Log the result */
 	if (szMsg)
 		_print_check_result(result, szMsg);
+
+	return result;
 }
 
 VOID resize_console_window()

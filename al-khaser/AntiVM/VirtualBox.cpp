@@ -5,7 +5,7 @@
 /*
 Registry key values
 */
-VOID vbox_reg_key_value()
+BOOL vbox_reg_key_value()
 {
 	/* Array of strings of blacklisted registry key values */
 	const TCHAR *szEntries[][3] = {
@@ -17,22 +17,27 @@ VOID vbox_reg_key_value()
 
 	WORD dwLength = sizeof(szEntries) / sizeof(szEntries[0]);
 
+	BOOL check = FALSE;
 	for (int i = 0; i < dwLength; i++)
 	{
 		TCHAR msg[256] = _T("");
 		_stprintf_s(msg, sizeof(msg) / sizeof(TCHAR), _T("Checking reg key HARDWARE\\Description\\System - %s is set to %s"), szEntries[i][1], szEntries[i][2]);
-		if (Is_RegKeyValueExists(HKEY_LOCAL_MACHINE, szEntries[i][0], szEntries[i][1], szEntries[i][2]))
+		if (Is_RegKeyValueExists(HKEY_LOCAL_MACHINE, szEntries[i][0], szEntries[i][1], szEntries[i][2])) {
 			print_results(TRUE, msg);
-		else
+			check = TRUE;
+		} else {
 			print_results(FALSE, msg);
+		}
 	}
+
+	return check;
 }
 
 
 /*
 Check against virtualbox registry keys
 */
-VOID vbox_reg_keys()
+BOOL vbox_reg_keys()
 {
 	/* Array of strings of blacklisted registry keys */
 	const TCHAR* szKeys[] = {
@@ -49,23 +54,28 @@ VOID vbox_reg_keys()
 
 	WORD dwlength = sizeof(szKeys) / sizeof(szKeys[0]);
 
+	BOOL check = FALSE;
 	/* Check one by one */
 	for (int i = 0; i < dwlength; i++)
 	{
 		TCHAR msg[256] = _T("");
 		_stprintf_s(msg, sizeof(msg) / sizeof(TCHAR), _T("Checking reg key %s "), szKeys[i]);
-		if (Is_RegKeyExists(HKEY_LOCAL_MACHINE, szKeys[i]))
+		if (Is_RegKeyExists(HKEY_LOCAL_MACHINE, szKeys[i])) {
 			print_results(TRUE, msg);
-		else
+			check = TRUE;
+		} else {
 			print_results(FALSE, msg);
+		}
 	}
+	
+	return check;
 }
 
 
 /*
 Check against virtualbox blacklisted files
 */
-VOID vbox_files()
+BOOL vbox_files()
 {
 	/* Array of strings of blacklisted paths */
 	const TCHAR* szPaths[] = {
@@ -100,21 +110,26 @@ VOID vbox_files()
 		Wow64DisableWow64FsRedirection(&OldValue);
 	}
 
+	BOOL check = FALSE;
 	/* Check one by one */
 	for (int i = 0; i < dwlength; i++)
 	{
 		PathCombine(szPath, szWinDir, szPaths[i]);
 		TCHAR msg[256] = _T("");
 		_stprintf_s(msg, sizeof(msg) / sizeof(TCHAR), _T("Checking file %s "), szPath);
-		if (is_FileExists(szPath))
+		if (is_FileExists(szPath)) {
 			print_results(TRUE, msg);
-		else
+			check = TRUE;
+		} else {
 			print_results(FALSE, msg);
+		}
 	}
 
 	if (IsWoW64()) {
 		Wow64RevertWow64FsRedirection(&OldValue);
 	}
+
+	return check;
 }
 
 
@@ -150,7 +165,7 @@ BOOL vbox_check_mac()
 /*
 Check against pseaudo-devices
 */
-VOID vbox_devices()
+BOOL vbox_devices()
 {
 	const TCHAR *devices[] = {
 		_T("\\\\.\\VBoxMiniRdrDN"),
@@ -161,6 +176,7 @@ VOID vbox_devices()
 	};
 
 	WORD iLength = sizeof(devices) / sizeof(devices[0]);
+	BOOL check = FALSE;
 	for (int i = 0; i < iLength; i++)
 	{
 		HANDLE hFile = CreateFile(devices[i], GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -169,10 +185,14 @@ VOID vbox_devices()
 		if (hFile != INVALID_HANDLE_VALUE) {
 			CloseHandle(hFile);
 			print_results(TRUE, msg);
+			check = TRUE;
+			
 		}
 		else
 			print_results(FALSE, msg);
 	}
+
+	return check;
 }
 
 
@@ -213,7 +233,7 @@ BOOL vbox_network_share()
 /*
 Check for process list
 */
-VOID vbox_processes()
+BOOL vbox_processes()
 {
 	const TCHAR *szProcesses[] = {
 		_T("vboxservice.exe"),
@@ -221,15 +241,20 @@ VOID vbox_processes()
 	};
 
 	WORD iLength = sizeof(szProcesses) / sizeof(szProcesses[0]);
+	BOOL check = FALSE;
 	for (int i = 0; i < iLength; i++)
 	{
 		TCHAR msg[256] = _T("");
 		_stprintf_s(msg, sizeof(msg) / sizeof(TCHAR), _T("Checking VirtualBox process %s "), szProcesses[i]);
-		if (GetProcessIdFromName(szProcesses[i]))
+		if (GetProcessIdFromName(szProcesses[i])) {
 			print_results(TRUE, msg);
+			check = TRUE;
+		}
 		else
 			print_results(FALSE, msg);
 	}
+
+	return check;
 }
 
 

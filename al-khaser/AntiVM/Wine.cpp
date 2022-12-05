@@ -27,7 +27,7 @@ BOOL wine_exports()
 /*
 Check against Wine registry keys
 */
-VOID wine_reg_keys()
+BOOL wine_reg_keys()
 {
 	/* Array of strings of blacklisted registry keys */
 	const TCHAR* szKeys[] = {
@@ -35,15 +35,19 @@ VOID wine_reg_keys()
 	};
 
 	WORD dwlength = sizeof(szKeys) / sizeof(szKeys[0]);
-
+	BOOL check = FALSE;
 	/* Check one by one */
 	for (int i = 0; i < dwlength; i++)
 	{
 		TCHAR msg[256] = _T("");
 		_stprintf_s(msg, sizeof(msg) / sizeof(TCHAR), _T("Checking reg key %s "), szKeys[i]);
-		if (Is_RegKeyExists(HKEY_CURRENT_USER, szKeys[i]))
+		if (Is_RegKeyExists(HKEY_CURRENT_USER, szKeys[i])) {
 			print_results(TRUE, msg);
+			check = TRUE;
+		}
 		else
 			print_results(FALSE, msg);
 	}
+
+	return check;
 }

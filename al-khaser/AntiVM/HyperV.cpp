@@ -5,38 +5,39 @@
 BOOL check_hyperv_driver_objects()
 {
 	auto driverList = enumerate_object_directory(L"\\Driver");
+	BOOL check = FALSE;
 	if (driverList == nullptr)
 	{
-		return FALSE;
+		return check;
 	}
 	for (wchar_t* driver : *driverList)
 	{
 		if (StrCmpCW(driver, L"VMBusHID") == 0)
 		{
-			return TRUE;
+			check = TRUE;
 		}
 		if (StrCmpCW(driver, L"vmbus") == 0)
 		{
-			return TRUE;
+			check = TRUE;
 		}
 		if (StrCmpCW(driver, L"vmgid") == 0)
 		{
-			return TRUE;
+			check = TRUE;
 		}
 		if (StrCmpCW(driver, L"IndirectKmd") == 0)
 		{
-			return TRUE;
+			check = TRUE;
 		}
 		if (StrCmpCW(driver, L"HyperVideo") == 0)
 		{
-			return TRUE;
+			check = TRUE;
 		}
 		if (StrCmpCW(driver, L"hyperkbd") == 0)
 		{
-			return TRUE;
+			check = TRUE;
 		}
 	}
-	return FALSE;
+	return check;
 }
 
 

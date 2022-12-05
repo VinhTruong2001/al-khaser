@@ -1,10 +1,10 @@
 #pragma once
 
-VOID loaded_dlls();
-VOID known_file_names();
-VOID known_usernames();
-VOID known_hostnames();
-VOID other_known_sandbox_environment_checks();
+BOOL loaded_dlls();
+BOOL known_file_names();
+BOOL known_usernames();
+BOOL known_hostnames();
+BOOL other_known_sandbox_environment_checks();
 BOOL NumberOfProcessors();
 BOOL idt_trick();
 BOOL ldt_trick();

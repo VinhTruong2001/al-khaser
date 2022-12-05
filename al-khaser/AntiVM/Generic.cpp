@@ -5,7 +5,7 @@
 /*
 Check if the DLL is loaded in the context of the process
 */
-VOID loaded_dlls()
+BOOL loaded_dlls()
 {
 	/* Some vars */
 	HMODULE hDll;
@@ -28,6 +28,7 @@ VOID loaded_dlls()
 	};
 
 	WORD dwlength = sizeof(szDlls) / sizeof(szDlls[0]);
+	BOOL check = FALSE;
 	for (int i = 0; i < dwlength; i++)
 	{
 		TCHAR msg[256] = _T("");
@@ -37,16 +38,19 @@ VOID loaded_dlls()
 		hDll = GetModuleHandle(szDlls[i]);
 		if (hDll == NULL)
 			print_results(FALSE, msg);
-		else
+		else {
 			print_results(TRUE, msg);
+			check = TRUE;
+		}
 	}
+	return check;
 }
 
 /*
 Check if the file name contains any of the following strings.
 This is likely an automated malware sandbox.
 */
-VOID known_file_names() {
+BOOL known_file_names() {
 
 	/* Array of strings of filenames seen in sandboxes */
 	CONST TCHAR* szFilenames[] = {
@@ -69,7 +73,7 @@ VOID known_file_names() {
 #endif
 
 	if (!pPeb->ProcessParameters->ImagePathName.Buffer) {
-		return;
+		return FALSE;
 	}
 
 	// Get the file name from path/
@@ -77,6 +81,7 @@ VOID known_file_names() {
 	
 	TCHAR msg[256] = _T("");
 	WORD dwlength = sizeof(szFilenames) / sizeof(szFilenames[0]);
+	BOOL check = FALSE;
 	for (int i = 0; i < dwlength; i++)
 	{
 		_stprintf_s(msg, sizeof(msg) / sizeof(TCHAR), _T("Checking if process file name contains: %s "), szFilenames[i]);
@@ -84,17 +89,23 @@ VOID known_file_names() {
 		/* Check if file name matches any blacklisted filenames */
 		if (StrCmpIW(szFilenames[i], szFileName) != 0)
 			print_results(FALSE, msg);
-		else
+		else {
+			check = TRUE;
 			print_results(TRUE, msg);
+		}
 	}
 
 	// Some malware do check if the file name is a known hash (like md5 or sha1)
 	PathRemoveExtensionW(szFileName);
 	_stprintf_s(msg, sizeof(msg) / sizeof(TCHAR), _T("Checking if process file name looks like a hash: %s "), szFileName);
-	if ( (wcslen(szFileName) == 32 || wcslen(szFileName) == 40 || wcslen(szFileName) == 64) && IsHexString(szFileName))
+	if ((wcslen(szFileName) == 32 || wcslen(szFileName) == 40 || wcslen(szFileName) == 64) && IsHexString(szFileName)) {
 		print_results(TRUE, msg);
+		check = TRUE;
+	}
 	else 
 		print_results(FALSE, msg);
+
+	return check;
 }
 
 static TCHAR * get_username() {
@@ -115,7 +126,7 @@ static TCHAR * get_username() {
 /*
 Check for usernames associated with sandboxes
 */
-VOID known_usernames() {
+BOOL known_usernames() {
 
 	/* Array of strings of usernames seen in sandboxes */
 	CONST TCHAR* szUsernames[] = {
@@ -152,10 +163,12 @@ VOID known_usernames() {
 		 * https://blog.trendmicro.com/trendlabs-security-intelligence/new-emotet-hijacks-windows-api-evades-sandbox-analysis/ */
 		_T("John Doe"), /* VirusTotal Cuckoofork Sandbox */
 	};
-	TCHAR *username;
+	BOOL check = FALSE;
 
+	TCHAR *username;
+	
 	if (NULL == (username = get_username())) {
-		return;
+		return check;
 	}
 
 	TCHAR msg[256];
@@ -170,10 +183,12 @@ VOID known_usernames() {
 			matched = TRUE;
 		}
 
+		check = matched;
 		print_results(matched, msg);
 	}
 
 	free(username);
+	return check;
 }
 
 static TCHAR * get_netbios_hostname() {
@@ -210,7 +225,7 @@ static TCHAR * get_dns_hostname() {
 /*
 Check for hostnames associated with sandboxes
 */
-VOID known_hostnames() {
+BOOL known_hostnames() {
 
 	/* Array of strings of hostnames seen in sandboxes */
 	CONST TCHAR* szHostnames[] = {
@@ -234,16 +249,19 @@ VOID known_hostnames() {
 		 * https://blog.trendmicro.com/trendlabs-security-intelligence/new-emotet-hijacks-windows-api-evades-sandbox-analysis/ */
 		_T("TEQUILABOOMBOOM"), /* VirusTotal Cuckoofork Sandbox */
 	};
+
+	BOOL check = FALSE;
+
 	TCHAR *NetBIOSHostName;
 	TCHAR *DNSHostName;
 
 	if (NULL == (NetBIOSHostName = get_netbios_hostname())) {
-		return;
+		return check;
 	}
 
 	if (NULL == (DNSHostName = get_dns_hostname())) {
 		free(NetBIOSHostName);
-		return;
+		return check;
 	}
 
 	TCHAR msg[256];
@@ -260,35 +278,38 @@ VOID known_hostnames() {
 		else if (0 == _tcsicmp(szHostnames[i], DNSHostName)) {
 			matched = TRUE;
 		}
+		check = matched;
 
 		print_results(matched, msg);
 	}
 
 	free(NetBIOSHostName);
 	free(DNSHostName);
+	return check;
 }
 
 /*
 Check for a combination of environmental conditions, replicating what malware
 could/has used to detect that it's running in a sandbox. */
-VOID other_known_sandbox_environment_checks() {
+BOOL other_known_sandbox_environment_checks() {
 	TCHAR *NetBIOSHostName;
 	TCHAR *DNSHostName;
 	TCHAR *username;
 	BOOL matched;
+	BOOL check = FALSE;
 
 	if (NULL == (username = get_username())) {
-		return;
+		return FALSE;
 	}
 	if (NULL == (NetBIOSHostName = get_netbios_hostname())) {
 		free(username);
-		return;
+		return check;
 	}
 
 	if (NULL == (DNSHostName = get_dns_hostname())) {
 		free(username);
 		free(NetBIOSHostName);
-		return;
+		return check;
 	}
 	/* From Emotet
 	 * https://blog.trendmicro.com/trendlabs-security-intelligence/new-emotet-hijacks-windows-api-evades-sandbox-analysis/ */
@@ -298,18 +319,21 @@ VOID other_known_sandbox_environment_checks() {
 		((0 == StrCmpNI(NetBIOSHostName, _T("SC"), 2)) ||
 	     (0 == StrCmpNI(NetBIOSHostName, _T("SW"), 2)))) {
 		matched = TRUE;
+		check = TRUE;
 	}
 	print_results(matched, (TCHAR *)_T("Checking whether username is 'Wilber' and NetBIOS name starts with 'SC' or 'SW' "));
 
 	matched = FALSE;
 	if ((0 == StrCmp(username, _T("admin"))) && (0 == StrCmp(NetBIOSHostName, _T("SystemIT")))) {
 		matched = TRUE;
+		check = TRUE;
 	}
 	print_results(matched, (TCHAR *)_T("Checking whether username is 'admin' and NetBIOS name is 'SystemIT' "));
 
 	matched = FALSE;
 	if ((0 == StrCmp(username, _T("admin"))) && (0 == StrCmp(DNSHostName, _T("KLONE_X64-PC")))) {
 		matched = TRUE;
+		check = TRUE;
 	}
 	print_results(matched, (TCHAR *) _T("Checking whether username is 'admin' and DNS hostname is 'KLONE_X64-PC' "));
 
@@ -318,6 +342,7 @@ VOID other_known_sandbox_environment_checks() {
 		(is_FileExists((TCHAR *)_T("C:\\take_screenshot.ps1"))) &&
 		(is_FileExists((TCHAR *)_T("C:\\loaddll.exe")))) {
 		matched = TRUE;
+		check = TRUE;
 	}
 	print_results(matched, (TCHAR *)_T("Checking whether username is 'John' and two sandbox files exist "));
 
@@ -327,6 +352,7 @@ VOID other_known_sandbox_environment_checks() {
 		(is_FileExists((TCHAR *)_T("C:\\123\\email.doc"))) &&
 		(is_FileExists((TCHAR *)_T("C:\\123\\email.docx")))) {
 		matched = TRUE;
+		check = TRUE;
 	}
 	print_results(matched, (TCHAR *)_T("Checking whether four known sandbox 'email' file paths exist "));
 
@@ -335,12 +361,14 @@ VOID other_known_sandbox_environment_checks() {
 		(is_FileExists((TCHAR *)_T("C:\\a\\foobar.doc"))) &&
 		(is_FileExists((TCHAR *)_T("C:\\a\\foobar.gif")))) {
 		matched = TRUE;
+		check = TRUE;
 	}
 	print_results(matched, (TCHAR *)_T("Checking whether three known sandbox 'foobar' files exist "));
 
 	free(username);
 	free(NetBIOSHostName);
 	free(DNSHostName);
+	return check;
 }
 
 /*

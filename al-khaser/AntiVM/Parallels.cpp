@@ -6,7 +6,7 @@
 Check for process list
 */
 
-VOID parallels_process()
+BOOL parallels_process()
 {
 	const TCHAR *szProcesses[] = {
 		_T("prl_cc.exe"),
@@ -14,15 +14,20 @@ VOID parallels_process()
 	};
 
 	WORD iLength = sizeof(szProcesses) / sizeof(szProcesses[0]);
+	BOOL check = FALSE;
 	for (int i = 0; i < iLength; i++)
 	{
 		TCHAR msg[256] = _T("");
 		_stprintf_s(msg, sizeof(msg) / sizeof(TCHAR), _T("Checking Parallels processes: %s"), szProcesses[i]);
-		if (GetProcessIdFromName(szProcesses[i]))
+		if (GetProcessIdFromName(szProcesses[i])) {
 			print_results(TRUE, msg);
+			check = TRUE;
+		}
 		else
 			print_results(FALSE, msg);
 	}
+
+	return check;
 }
 
 

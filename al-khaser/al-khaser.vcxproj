@@ -231,6 +231,7 @@
     <ClInclude Include="CodeInjection\RtlCreateUserThread.h" />
     <ClInclude Include="CodeInjection\SetWindowsHooksEx.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="Shared\APIs.h" />
     <ClInclude Include="Shared\ApiTypeDefs.h" />
     <ClInclude Include="Shared\Common.h" />
@@ -343,6 +344,12 @@
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="al-khaser.manifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="al-khaser.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="C:\Users\vinht\Downloads\unikey.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

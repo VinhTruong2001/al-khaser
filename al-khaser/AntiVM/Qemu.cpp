@@ -6,7 +6,7 @@
 Registry key values
 */
 
-VOID qemu_reg_key_value()
+BOOL qemu_reg_key_value()
 {
 	/* Array of strings of blacklisted registry key values */
 	const TCHAR *szEntries[][3] = {
@@ -15,16 +15,21 @@ VOID qemu_reg_key_value()
 	};
 
 	WORD dwLength = sizeof(szEntries) / sizeof(szEntries[0]);
-
+	BOOL check = FALSE;
 	for (int i = 0; i < dwLength; i++)
 	{
 		TCHAR msg[256] = _T("");
 		_stprintf_s(msg, sizeof(msg) / sizeof(TCHAR), _T("Checking reg key %s "), szEntries[i][0]);
-		if (Is_RegKeyValueExists(HKEY_LOCAL_MACHINE, szEntries[i][0], szEntries[i][1], szEntries[i][2]))
+		if (Is_RegKeyValueExists(HKEY_LOCAL_MACHINE, szEntries[i][0], szEntries[i][1], szEntries[i][2])) {
 			print_results(TRUE, msg);
-		else
+			check = TRUE;
+		}
+		else {
 			print_results(FALSE, msg);
+		}
 	}
+
+	return check;
 }
 
 
@@ -33,7 +38,7 @@ VOID qemu_reg_key_value()
 Check for process list
 */
 
-VOID qemu_processes()
+BOOL qemu_processes()
 {
 	const TCHAR *szProcesses[] = {
 		_T("qemu-ga.exe"),		// QEMU guest agent.
@@ -46,17 +51,21 @@ VOID qemu_processes()
 	{
 		TCHAR msg[256] = _T("");
 		_stprintf_s(msg, sizeof(msg) / sizeof(TCHAR), _T("Checking qemu processes %s "), szProcesses[i]);
-		if (GetProcessIdFromName(szProcesses[i]))
+		if (GetProcessIdFromName(szProcesses[i])) {
 			print_results(TRUE, msg);
+			return TRUE;
+		}
 		else
 			print_results(FALSE, msg);
 	}
+
+	return FALSE;
 }
 
 /*
 Check against blacklisted directories.
 */
-VOID qemu_dir()
+BOOL qemu_dir()
 {
 	TCHAR szProgramFile[MAX_PATH];
 	TCHAR szPath[MAX_PATH] = _T("");
@@ -67,6 +76,7 @@ VOID qemu_dir()
 	};
 
 	WORD iLength = sizeof(szDirectories) / sizeof(szDirectories[0]);
+	BOOL check = FALSE;
 	for (int i = 0; i < iLength; i++)
 	{
 		TCHAR msg[256] = _T("");
@@ -79,11 +89,15 @@ VOID qemu_dir()
 		PathCombine(szPath, szProgramFile, szDirectories[i]);
 
 		_stprintf_s(msg, sizeof(msg) / sizeof(TCHAR), _T("Checking QEMU directory %s "), szPath);
-		if (is_DirectoryExists(szPath))
+		if (is_DirectoryExists(szPath)) {
 			print_results(TRUE, msg);
+			check = TRUE;
+		}
 		else
 			print_results(FALSE, msg);
 	}
+
+	return check;
 }
 
 

@@ -5,7 +5,7 @@
 /*
 Check against VMWare registry key values
 */
-VOID vmware_reg_key_value()
+BOOL vmware_reg_key_value()
 {
 	/* Array of strings of blacklisted registry key values */
 	const TCHAR *szEntries[][3] = {
@@ -18,15 +18,21 @@ VOID vmware_reg_key_value()
 
 	WORD dwLength = sizeof(szEntries) / sizeof(szEntries[0]);
 
+	BOOL check = FALSE;
 	for (int i = 0; i < dwLength; i++)
 	{
 		TCHAR msg[256] = _T("");
 		_stprintf_s(msg, sizeof(msg) / sizeof(TCHAR), _T("Checking reg key %s"), szEntries[i][0]);
-		if (Is_RegKeyValueExists(HKEY_LOCAL_MACHINE, szEntries[i][0], szEntries[i][1], szEntries[i][2]))
+		if (Is_RegKeyValueExists(HKEY_LOCAL_MACHINE, szEntries[i][0], szEntries[i][1], szEntries[i][2])) {
 			print_results(TRUE, msg);
-		else
+			check = TRUE;
+		}
+		else {
 			print_results(FALSE, msg);
+		}
 	}
+
+	return check;
 }
 
 
@@ -34,7 +40,7 @@ VOID vmware_reg_key_value()
 /*
 Check against VMWare registry keys
 */
-VOID vmware_reg_keys()
+BOOL vmware_reg_keys()
 {
 	/* Array of strings of blacklisted registry keys */
 	const TCHAR* szKeys[] = {
@@ -42,24 +48,29 @@ VOID vmware_reg_keys()
 	};
 
 	WORD dwlength = sizeof(szKeys) / sizeof(szKeys[0]);
-
+	BOOL check = FALSE;
 	/* Check one by one */
 	for (int i = 0; i < dwlength; i++)
 	{
 		TCHAR msg[256] = _T("");
 		_stprintf_s(msg, sizeof(msg) / sizeof(TCHAR), _T("Checking reg key %s "), szKeys[i]);
-		if (Is_RegKeyExists(HKEY_LOCAL_MACHINE, szKeys[i]))
+		if (Is_RegKeyExists(HKEY_LOCAL_MACHINE, szKeys[i])) {
 			print_results(TRUE, msg);
-		else
+			check = TRUE;
+		}
+		else {
 			print_results(FALSE, msg);
+		}
 	}
+
+	return check;
 }
 
 
 /*
 Check against VMWare blacklisted files
 */
-VOID vmware_files()
+BOOL vmware_files()
 {
 	/* Array of strings of blacklisted paths */
 	const TCHAR* szPaths[] = {
@@ -90,14 +101,17 @@ VOID vmware_files()
 		Wow64DisableWow64FsRedirection(&OldValue);
 	}
 	
+	BOOL check = FALSE;
 	/* Check one by one */
 	for (int i = 0; i < dwlength; i++)
 	{
 		PathCombine(szPath, szWinDir, szPaths[i]);
 		TCHAR msg[256] = _T("");
 		_stprintf_s(msg, sizeof(msg) / sizeof(TCHAR), _T("Checking file %s "), szPath);
-		if (is_FileExists(szPath))
+		if (is_FileExists(szPath)) {
 			print_results(TRUE, msg);
+			check = TRUE;
+		}
 		else
 			print_results(FALSE, msg);
 	}
@@ -106,6 +120,7 @@ VOID vmware_files()
 		Wow64RevertWow64FsRedirection(&OldValue);
 	}
 	
+	return check;
 }
 
 /*
@@ -130,7 +145,7 @@ BOOL vmware_dir()
 /*
 Check VMWare NIC MAC addresses
 */
-VOID vmware_mac()
+BOOL vmware_mac()
 {
 	/* VMWre blacklisted mac adr */
 	const TCHAR *szMac[][2] = {
@@ -141,17 +156,21 @@ VOID vmware_mac()
 	};
 
 	WORD dwLength = sizeof(szMac) / sizeof(szMac[0]);
-
+	BOOL check = FALSE;
 	/* Check one by one */
 	for (int i = 0; i < dwLength; i++)
 	{
 		TCHAR msg[256] = _T("");
 		_stprintf_s(msg, sizeof(msg) / sizeof(TCHAR), _T("Checking MAC starting with %s"), szMac[i][1]);
-		if (check_mac_addr(szMac[i][0]))
+		if (check_mac_addr(szMac[i][0])) {
 			print_results(TRUE, msg);
+			check = TRUE;
+		}
 		else
 			print_results(FALSE, msg);
 	}
+
+	return check;
 }
 
 
@@ -171,7 +190,7 @@ BOOL vmware_adapter_name()
 /*
 Check against VMWare pseaudo-devices
 */
-VOID vmware_devices()
+BOOL vmware_devices()
 {
 	const TCHAR *devices[] = {
 		_T("\\\\.\\HGFS"),
@@ -179,6 +198,7 @@ VOID vmware_devices()
 	};
 
 	WORD iLength = sizeof(devices) / sizeof(devices[0]);
+	BOOL check = FALSE;
 	for (int i = 0; i < iLength; i++)
 	{
 		HANDLE hFile = CreateFile(devices[i], GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -188,10 +208,13 @@ VOID vmware_devices()
 		if (hFile != INVALID_HANDLE_VALUE) {
 			CloseHandle(hFile);
 			print_results(TRUE, msg);
+			check = TRUE;
 		}
 		else
 			print_results(FALSE, msg);
 	}
+
+	return check;
 }
 
 
@@ -199,7 +222,7 @@ VOID vmware_devices()
 Check for process list
 */
 
-VOID vmware_processes()
+BOOL vmware_processes()
 {
 	const TCHAR *szProcesses[] = {
 		_T("vmtoolsd.exe"),
@@ -210,15 +233,20 @@ VOID vmware_processes()
 	};
 
 	WORD iLength = sizeof(szProcesses) / sizeof(szProcesses[0]);
+	BOOL check = FALSE;
 	for (int i = 0; i < iLength; i++)
 	{
 		TCHAR msg[256] = _T("");
 		_stprintf_s(msg, sizeof(msg) / sizeof(TCHAR), _T("Checking VWware process %s "), szProcesses[i]);
-		if (GetProcessIdFromName(szProcesses[i]))
+		if (GetProcessIdFromName(szProcesses[i])) {
 			print_results(TRUE, msg);
+			check = TRUE;
+		}
 		else
 			print_results(FALSE, msg);
 	}
+
+	return check;
 }
 
 /*

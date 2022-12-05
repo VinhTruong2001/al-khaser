@@ -4,7 +4,7 @@
 /*
 Check against kvm registry keys
 */
-VOID kvm_reg_keys()
+BOOL kvm_reg_keys()
 {
 	/* Array of strings of blacklisted registry keys */
 	const TCHAR* szKeys[] = {
@@ -18,23 +18,27 @@ VOID kvm_reg_keys()
 	};
 
 	WORD dwlength = sizeof(szKeys) / sizeof(szKeys[0]);
-
+	BOOL check = FALSE;
 	/* Check one by one */
 	for (int i = 0; i < dwlength; i++)
 	{
 		TCHAR msg[256] = _T("");
 		_stprintf_s(msg, sizeof(msg) / sizeof(TCHAR), _T("Checking reg key %s "), szKeys[i]);
-		if (Is_RegKeyExists(HKEY_LOCAL_MACHINE, szKeys[i]))
+		if (Is_RegKeyExists(HKEY_LOCAL_MACHINE, szKeys[i])) {
 			print_results(TRUE, msg);
+			check = TRUE;
+		}
 		else
 			print_results(FALSE, msg);
 	}
+
+	return check;
 }
 
 /*
 Check against kvm blacklisted files
 */
-VOID kvm_files()
+BOOL kvm_files()
 {
 	/* Array of strings of blacklisted paths */
 	const TCHAR* szPaths[] = {
@@ -63,14 +67,17 @@ VOID kvm_files()
 		Wow64DisableWow64FsRedirection(&OldValue);
 	}
 
+	BOOL check = FALSE;
 	/* Check one by one */
 	for (int i = 0; i < dwlength; i++)
 	{
 		PathCombine(szPath, szWinDir, szPaths[i]);
 		TCHAR msg[256] = _T("");
 		_stprintf_s(msg, sizeof(msg) / sizeof(TCHAR), _T("Checking file %s "), szPath);
-		if (is_FileExists(szPath))
+		if (is_FileExists(szPath)) {
 			print_results(TRUE, msg);
+			check = TRUE;
+		}
 		else
 			print_results(FALSE, msg);
 	}
@@ -78,6 +85,8 @@ VOID kvm_files()
 	if (IsWoW64()) {
 		Wow64RevertWow64FsRedirection(&OldValue);
 	}
+
+	return check;
 }
 
 /*
